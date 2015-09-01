@@ -1,3 +1,10 @@
+## This fork: details
+
+the elemental-ircd protomod is designed to work with ircd-modnar, not elemental.
+the bahamut module is designed to work with ircd-rainbow-trout, not plain bahamut.
+other than that, this is pretty much the same as standard Shalture. just with less lameness
+regarding numeric channels
+
 ## Shaltúre
 
 Shaltúre is a set of services for IRC networks designed for large IRC networks 
