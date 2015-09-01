@@ -62,3 +62,4 @@ tags
 aclocal.m4
 
 *.dylib
+run/

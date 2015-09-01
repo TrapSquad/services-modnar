@@ -1411,7 +1411,7 @@ chanacs_t *chanacs_add(mychan_t *mychan, myentity_t *mt, unsigned int level, tim
 
 	return_val_if_fail(mychan != NULL && mt != NULL, NULL);
 
-	if (*mychan->name != '#')
+	if (!VALID_REG_CHANNEL_PFX(mychan->name))
 	{
 		slog(LG_DEBUG, "chanacs_add(): got non #channel: %s", mychan->name);
 		return NULL;

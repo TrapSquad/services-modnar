@@ -50,7 +50,7 @@ static void cs_cmd_drop(sourceinfo_t *si, int parc, char *parv[])
 		return;
 	}
 
-	if (*name != '#')
+	if (!VALID_REG_CHANNEL_PFX(name))
 	{
 		command_fail(si, fault_badparams, STR_INVALID_PARAMS, "DROP");
 		command_fail(si, fault_badparams, _("Syntax: DROP <#channel>"));
@@ -133,7 +133,7 @@ static void cs_cmd_fdrop(sourceinfo_t *si, int parc, char *parv[])
 		return;
 	}
 
-	if (*name != '#')
+	if (!VALID_REG_CHANNEL_PFX(name))
 	{
 		command_fail(si, fault_badparams, STR_INVALID_PARAMS, "FDROP");
 		command_fail(si, fault_badparams, _("Syntax: FDROP <#channel>"));

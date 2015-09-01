@@ -31,12 +31,12 @@ ircd_t Bahamut = {
 	.protect_mode = 0,
 	.halfops_mode = 0,
 	.owner_mchar = "+",
-	.protect_mchar = "+",
-	.halfops_mchar = "+",
+	.protect_mchar = "+a",
+	.halfops_mchar = "+h",
 	.type = PROTOCOL_BAHAMUT,
 	.perm_mode = 0,
 	.oimmune_mode = 0,
-	.ban_like_modes = "beI",
+	.ban_like_modes = "beIq",
 	.except_mchar = 'e',
 	.invex_mchar = 'I',
 	.flags = IRCD_HOLDNICK,
@@ -65,13 +65,17 @@ struct extmode bahamut_ignore_mode_list[] = {
 };
 
 struct cmode_ bahamut_status_mode_list[] = {
+  { 'a', CSTATUS_PROTECT    },
   { 'o', CSTATUS_OP    },
+  { 'h', CSTATUS_HALFOP },
   { 'v', CSTATUS_VOICE },
   { '\0', 0 }
 };
 
 struct cmode_ bahamut_prefix_mode_list[] = {
+  { '!', CSTATUS_PROTECT    },
   { '@', CSTATUS_OP    },
+  { '%', CSTATUS_HALFOP    },
   { '+', CSTATUS_VOICE },
   { '\0', 0 }
 };
@@ -182,10 +186,10 @@ static void bahamut_wallops_sts(const char *text)
 static void bahamut_join_sts(channel_t *c, user_t *u, bool isnew, char *modes)
 {
 	if (isnew)
-		sts(":%s SJOIN %lu %s %s :@%s", me.name, (unsigned long)c->ts,
+		sts(":%s SJOIN %lu %s %s :!@%s", me.name, (unsigned long)c->ts,
 				c->name, modes, u->nick);
 	else
-		sts(":%s SJOIN %lu %s + :@%s", me.name, (unsigned long)c->ts,
+		sts(":%s SJOIN %lu %s + :!@%s", me.name, (unsigned long)c->ts,
 				c->name, u->nick);
 }
 
@@ -350,6 +354,7 @@ static void bahamut_on_login(user_t *u, myuser_t *account, const char *wantedhos
 	/* Can only do this for nickserv, and can only record identified
 	 * state if logged in to correct nick, sorry -- jilles
 	 */
+	sts(":%s SVSTAG %s ACCOUNT %s", me.name, u->nick, entity(account)->name);
 	if (should_reg_umode(u))
 		sts(":%s SVSMODE %s +rd %lu", nicksvs.nick, u->nick, (unsigned long)CURRTIME);
 }
@@ -359,6 +364,7 @@ static bool bahamut_on_logout(user_t *u, const char *account)
 {
 	return_val_if_fail(u != NULL, false);
 
+	sts(":%s SVSTAG %s ACCOUNT :*", me.name, u->nick);
 	if (!nicksvs.no_nick_ownership)
 		sts(":%s SVSMODE %s -r+d %lu", nicksvs.nick, u->nick, (unsigned long)CURRTIME);
 	return false;
@@ -407,6 +413,19 @@ static void m_topic(sourceinfo_t *si, int parc, char *parv[])
 		return;
 
 	handle_topic_from(si, c, parv[1], atol(parv[2]), parv[3]);
+}
+
+static void m_svstag(sourceinfo_t *si, int parc, char *parv[])
+{
+	if (!irccasecmp(parv[1], "ACCOUNT")) {
+		user_t *u = user_find(parv[0]);
+		if (u == NULL) return;
+		if (parc == 2 || parv[2][0] == '\0')
+			handle_clearlogin(si, u);
+		else if (me.bursting)
+			handle_burstlogin(u, parv[2], 0);
+		else handle_setlogin(si, u, parv[2], 0);
+	}
 }
 
 static void m_ping(sourceinfo_t *si, int parc, char *parv[])
@@ -968,6 +987,7 @@ void _modinit(module_t * m)
 	pcommand_add("TOPIC", m_topic, 4, MSRC_USER | MSRC_SERVER);
 	pcommand_add("MOTD", m_motd, 1, MSRC_USER);
 	pcommand_add("BURST", m_burst, 0, MSRC_SERVER);
+	pcommand_add("SVSTAG", m_svstag, 0, MSRC_SERVER);
 
 	hook_add_event("nick_group");
 	hook_add_nick_group(nick_group);
